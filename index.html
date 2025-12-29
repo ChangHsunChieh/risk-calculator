@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>健康風險評估計算機</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", Arial, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; padding: 20px; }
+        .container { background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 600px; width: 100%; }
+        h2 { text-align: center; color: #333; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
+        select, input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; font-size: 16px; }
+        button { width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 18px; cursor: pointer; margin-top: 20px; transition: background 0.3s; }
+        button:hover { background-color: #218838; }
+        #result { margin-top: 25px; display: none; }
+        .score-box { background-color: #e9ecef; padding: 15px; border-radius: 5px; text-align: center; margin-bottom: 15px; }
+        .score-val { font-size: 2em; font-weight: bold; color: #007bff; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.9em; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f8f9fa; }
+        .highlight { background-color: #fff3cd; font-weight: bold; }
+        .note { font-size: 0.8em; color: #777; margin-top: 5px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>健康風險評估計算機</h2>
+    
+    <div class="form-group">
+        <label>年齡 (Age)</label>
+        <select id="age">
+            <option value="0">小於 35 歲</option>
+            <option value="1">35 - 40 歲</option>
+            <option value="2">40 - 45 歲</option>
+            <option value="3">45 - 50 歲</option>
+            <option value="3">50 - 55 歲</option>
+            <option value="4">55 - 60 歲</option>
+            <option value="5">60 - 65 歲</option>
+            <option value="7">65 歲或以上</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>性別 (Sex)</label>
+        <select id="sex">
+            <option value="0">女性 (Female)</option>
+            <option value="1">男性 (Male)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>BMI 指數</label>
+        <select id="bmi">
+            <option value="2">小於 18.5</option>
+            <option value="0">18.5 - 23</option>
+            <option value="0">23 - 25</option>
+            <option value="0">25 - 30</option>
+            <option value="1">30 或以上</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>糖尿病狀況 (Diabetes)</label>
+        <select id="diabetes">
+            <option value="0">空腹血糖 < 100</option>
+            <option value="0">空腹血糖 100 - 126</option>
+            <option value="1">空腹血糖 > 126 (無服藥)</option>
+            <option value="1">糖尿病且服藥控制中</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>高血壓狀況 (Hypertension)</label>
+        <select id="htn">
+            <option value="0">血壓 < 130/85</option>
+            <option value="0">血壓 > 130/85 (無服藥)</option>
+            <option value="1">任何血壓值 (服藥控制中)</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>FIB-4 指數</label>
+        <select id="fib4">
+            <option value="0">小於 1.3</option>
+            <option value="0">1.3 - 2.67</option>
+            <option value="1">2.67 - 3.25</option>
+            <option value="2">大於 3.25</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>eGFR (腎絲球過濾率)</label>
+        <select id="egfr">
+            <option value="0">大於 60</option>
+            <option value="1">30 - 60</option>
+            <option value="3">小於 30</option>
+        </select>
+    </div>
+
+    <button onclick="calculateRisk()">計算風險分數</button>
+
+    <div id="result">
+        <div class="score-box">
+            您的總分是：<br>
+            <span class="score-val" id="totalScore">0</span>
+        </div>
+        
+        <label>預估風險機率 (%)：</label>
+        <table>
+            <thead>
+                <tr>
+                    <th>1年</th>
+                    <th>3年</th>
+                    <th>5年</th>
+                    <th>10年</th>
+                    <th>15年</th>
+                    <th>20年</th>
+                </tr>
+            </thead>
+            <tbody id="riskTableBody">
+                <!-- Data will be inserted here -->
+            </tbody>
+        </table>
+        <div class="note">* 此結果僅供參考，實際醫療建議請諮詢專業醫師。</div>
+    </div>
+</div>
+
+<script>
+    const riskData = {
+        0:  { y1: 0.02, y3: 0.08, y5: 0.14, y10: 0.44, y15: 0.78, y20: 1.54 },
+        1:  { y1: 0.02, y3: 0.08, y5: 0.14, y10: 0.44, y15: 0.78, y20: 1.54 },
+        2:  { y1: 0.01, y3: 0.08, y5: 0.18, y10: 0.65, y15: 1.36, y20: 2.66 },
+        3:  { y1: 0.01, y3: 0.15, y5: 0.36, y10: 1.14, y15: 2.52, y20: 4.70 },
+        4:  { y1: 0.04, y3: 0.32, y5: 0.73, y10: 2.05, y15: 3.99, y20: 7.79 },
+        5:  { y1: 0.06, y3: 0.43, y5: 1.02, y10: 3.05, y15: 6.54, y20: 12.77 },
+        6:  { y1: 0.09, y3: 0.72, y5: 1.48, y10: 5.21, y15: 10.92, y20: 21.16 },
+        7:  { y1: 0.15, y3: 1.02, y5: 2.46, y10: 8.27, y15: 17.32, y20: 33.54 },
+        8:  { y1: 0.07, y3: 1.30, y5: 3.41, y10: 11.41, y15: 25.54, y20: 46.87 },
+        9:  { y1: 0.36, y3: 2.48, y5: 6.00, y10: 17.31, y15: 35.61, y20: 59.79 },
+        10: { y1: 0.51, y3: 3.80, y5: 8.99, y10: 26.89, y15: 50.09, y20: 74.44 }
+    };
+
+    function calculateRisk() {
+        // 1. Calculate Score
+        let score = 0;
+        const selects = ['age', 'sex', 'bmi', 'diabetes', 'htn', 'fib4', 'egfr'];
+        
+        selects.forEach(id => {
+            score += parseInt(document.getElementById(id).value);
+        });
+
+        // 2. Display Score
+        document.getElementById('totalScore').innerText = score;
+
+        // 3. Get Risk Data (handle scores >= 10)
+        let lookupScore = score;
+        if (score > 10) lookupScore = 10;
+        
+        // Handle score 0 and 1 using the same logic as "<=1"
+        if (score <= 1) lookupScore = 1; 
+        // Note: In the data object, I mapped key "0" to the same values just in case, 
+        // but the table logic says <=1 is one group.
+        
+        const data = riskData[lookupScore] || riskData[10]; // Fallback to max risk if something goes wrong
+
+        // 4. Update Table
+        const tbody = document.getElementById('riskTableBody');
+        tbody.innerHTML = `
+            <tr class="highlight">
+                <td>${data.y1}%</td>
+                <td>${data.y3}%</td>
+                <td>${data.y5}%</td>
+                <td>${data.y10}%</td>
+                <td>${data.y15}%</td>
+                <td>${data.y20}%</td>
+            </tr>
+        `;
+
+        // 5. Show Result Area
+        document.getElementById('result').style.display = 'block';
+    }
+</script>
+
+</body>
+</html>
